@@ -1,0 +1,24 @@
+version: '3'
+services:
+  nvsmi:
+    hostname: '$host'
+    image: tcc-image
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CMD_LINE=$CMD_LINE
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command:
+      # === Para executar o pipeline uma vez e parar
+      # python Pipeline_detection.py
+      python Pipeline_mosaic.py
+      # === Para ligar o container e deixar rodando
+      # tail -f Pipeline_detection.py
+    volumes:
+      - ./src:/src
+      - ./Dataset:/Dataset
+      - ./Models:/root/.insightface/models/
+      - ./Results:/Results
+    container_name: 'tcc-container'

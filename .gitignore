@@ -1,0 +1,11 @@
+# Diretorios de dados
+Dataset/*
+Models/*
+Results/*
+
+# Arquivos e diretorios ocultos
+.pylintrc
+.vscode
+
+# Extensoes
+*.pyc
