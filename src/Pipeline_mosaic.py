@@ -6,13 +6,21 @@ from pathlib import Path
 from mosaicos_complexos import *
 
 # === PARAMETROS DE DADOS
-RESULT_DATE = "2021-09-13_20-49-47"
+RESULT_DATE = "2021-08-19_19-10-56"
 MOSAICO = {
     "Face base": {
         "coords": [1,9,10,11,12,13,14,15,16,2,3,4,5,6,7,8,0,24,23,22,21,20,19,18,32,31,30,29,28,27,26,25,17],
         "color": (255,255,255)
     },
-    # Bochecha, 76, 14 ... contorna o sulco nasolabial e volta ate 76
+    # # Bochecha, 76, 14 ... contorna o sulco nasolabial e volta ate 76
+    "Bochecha esquerda": {
+        "coords": [5, 4, 3, 2, 16, 15, 76, 77],
+        "color": (255,0 ,0)
+    },
+    "Bochecha direita": {
+        "coords": [20, 19, 18, 32, 31, 30, 29, 82, 83],
+        "color": (255,0 ,0)
+    },
     "Sombrancelha esquerda": {
         "coords": [43,48,49,51,50,46,47,45,44],
         "color": (0,255,255)
@@ -48,7 +56,7 @@ MOSAICO = {
     "Sulco nasolabial direito": {
         "coords": [83,61,22,21,20], # [80,71,67,68,61,83,84,85],
         "color": (63,127,255)
-    },
+    }
 }
 MOSAICO_COMPLEXOS = { 
     # Partes que nao sao apenas ligar pontos, devem ter um nome e apontar para uma funcao
@@ -57,8 +65,20 @@ MOSAICO_COMPLEXOS = {
     "Testa": { # Reduzir um pouco os pontos da testa e ver se fica bom
         "function": testa,
         "color": (63,63,255)
+    },
+}
+
+PONTOS_IMAGINARIOS = {
+    "Sulco Esquerda": { # Reduzir um pouco os pontos da testa e ver se fica bom
+        "function": sulcoEsquerdo,
+        "color": (1, 0, 0)
+    },
+    "Sulco Direita": { # Reduzir um pouco os pontos da testa e ver se fica bom
+        "function": sulcoDireito,
+        "color": (1, 0, 0)
     }
 }
+
 RESULT_PATH = Path("..", "Results", RESULT_DATE, "mosaic")
 
 # === PARAMETROS DE DESENHO
@@ -81,10 +101,11 @@ for file_path in Path("..", "Results", RESULT_DATE, "faces").glob("*"):
         try:
             faces_data[file_path.stem] = pickle.load(face_file)[0] # Primeira imagem que tiver
         except Exception as e:
-            print(f"Pulando {file_path}... {repr(e)}")
+            print(f"Pulando {file_path}")
 
 # === Analisa cada face
 for face, data in faces_data.items():
+    img_sulco_esquerdo = []
     print("Criando mosaico da face ", face)
     # Procura a imagem correspondente no dataset
     face_path = Path("..", "Dataset").glob(f"**/*{face}*")
@@ -94,9 +115,7 @@ for face, data in faces_data.items():
         print(f"Face {face} não encontrado no dataset...")
         continue
     # Carrega a imagem em memoria
-    print("IS FILE: ", face_path.is_file())
     img = cv2.imread(str(face_path))
-    print("IMG: ", img)
     overlay = img.copy()
     if img is None:
         print(f"Erro ao carregar imagem {face_path}... pulando")
@@ -107,11 +126,13 @@ for face, data in faces_data.items():
         color = mosaic_item["color"]
         print(f"\t|-> {label.upper()}...", end="")
         points = function(data['landmark_2d_106'])
+
         # for point in points:
         #     print("POINT: ", point)
         #     img = cv2.circle(img, tuple(point), 3, (255,0,0), -1, cv2.LINE_AA)
 
         points_filtered = np.array(points, dtype=np.int32).reshape((-1,1,2))
+
         overlay = cv2.fillPoly(
             overlay,            # Imagem
             [points_filtered],  # Vertices do poligono
@@ -125,6 +146,33 @@ for face, data in faces_data.items():
         color = region_info["color"]
         # Separando e filtrando coordenadas da regiao do mosaico
         points_filtered = [data['landmark_2d_106'][index] for index in points] # Pega a coordenada dos landmarks referente ao label atual
+        
+        # Adicionado o ponto imaginario
+        if label == "Sulco nasolabial esquerdo":
+            for label, mosaic_item in PONTOS_IMAGINARIOS.items():
+                if label == "Sulco Esquerda":
+                    function = mosaic_item["function"]
+                    points = function(data['landmark_2d_106'])
+                    points_filtered.append(points[1])
+        elif label == "Sulco nasolabial direito":
+            for label, mosaic_item in PONTOS_IMAGINARIOS.items():
+                if label == "Sulco Direita":
+                    function = mosaic_item["function"]
+                    points = function(data['landmark_2d_106'])
+                    points_filtered.append(points[1])
+        elif label == "Bochecha esquerda":
+            for label, mosaic_item in PONTOS_IMAGINARIOS.items():
+                if label == "Sulco Esquerda":
+                    function = mosaic_item["function"]
+                    points = function(data['landmark_2d_106'])
+                    points_filtered.insert(0, points[1])
+        elif label == "Bochecha direita":
+            for label, mosaic_item in PONTOS_IMAGINARIOS.items():
+                if label == "Sulco Direita":
+                    function = mosaic_item["function"]
+                    points = function(data['landmark_2d_106'])
+                    points_filtered.insert(0, points[1])
+
         points_filtered = np.array(points_filtered, dtype=np.int32).reshape((-1,1,2)) # Reestrutura os dados conforme requisitado pela funcao de poligono
         # Draw the region
         overlay = cv2.fillPoly(
