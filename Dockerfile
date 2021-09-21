@@ -40,7 +40,7 @@ RUN pip install insightface
 RUN pip install opencv-python==4.3.0.36 opencv-contrib-python==4.3.0.36 opencv-python-headless==4.5.1.48
 
 # Install other usefull packages
-RUN pip install numpy pathlib
+RUN pip install numpy pathlib shapely
 
 # enable cuda
 ARG FORCE_CUDA="1"
