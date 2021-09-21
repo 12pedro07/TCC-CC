@@ -1,23 +1,7 @@
 import math
+from helpers import *
 
 def testa(coordenadas):
-    def espelha(x1,y1, x2, y2, x3, y3):
-        """
-        (x1, y1) = Ponto que sera espelhado
-        (x2, y2), (x3, y3) = Pontos que definem a reta "espelho"
-
-        Retorna (x4, y4) = Ponto espelhado
-        """
-        # y = mx + c
-        m = (y3-y2)/(x3-x2)
-        c = (x3*y2-x2*y3)/(x3-x2)
-        d = (x1 + (y1 - c)*m)/(1 + m**2)
-
-        x4 = 2*d - x1
-        y4 = 2*d*m - y1 + 2*c
-
-        return (int(x4), int(y4))
-
     # Linha de divisao da testa (y = mx + c)
     # Pontos da linha de divisao: (x1, y1), (x2, y2)
     canto_face_esquerdo = coordenadas[1]
@@ -37,71 +21,58 @@ def testa(coordenadas):
 
 
 def sulcoEsquerdo(coordenadas):
-    def espelha(x1,y1, x2, y2, x3, y3):
-        """
-        (x1, y1) = Ponto que sera espelhado
-        (x2, y2), (x3, y3) = Pontos que definem a reta "espelho"
+    x1, y1 = coordenadas[86] # Ponto que sera espelhado
+    x2, y2 = coordenadas[76] # Primeiro ponto para definir a reta
+    x3, y3 = coordenadas[78] # Segundo ponto para definir a reta
+    
+    # Ponto novo criado artificialmente pelo espelhamento de (x1, y1) na reta definida por [(x2,y2), (x3,y3)]
+    ponto_espelhado = espelha(x1, y1, x2, y2, x3, y3)
 
-        Retorna (x4, y4) = Ponto espelhado
-        """
-        # y = mx + c
-        m = (y3-y2)/(x3-x2)
-        c = (x3*y2-x2*y3)/(x3-x2)
-        d = (x1 + (y1 - c)*m)/(1 + m**2)
+    roi = [76, 77, 52, 6, 5, 4] # Indices da maioria dos pontos da roi (falta o imaginario)
+    roi = [*map(lambda x: coordenadas[x], roi)] # Converte os indices para coordenadas (x, y)
+    roi.append(ponto_espelhado) # Adiciona o ponto espelhado
 
-        x4 = 2*d - x1
-        y4 = 2*d*m - y1 + 2*c
-
-        return (int(x4), int(y4))
-
-    # Linha de divisao da testa (y = mx + c)
-    # Pontos da linha de divisao: (x1, y1), (x2, y2)
-    canto_face_esquerdo = coordenadas[77]
-    canto_face_direito = coordenadas[78]
-    indices_contorno = list(range(76,78))
-    indices_contorno.extend(list(range(77, 78, 1))) # [9, 10, ... 16, 32, 31, ... 25]
-    coordenadas_espelhadas = []
-
-    for indice in indices_contorno:
-        x1, y1 = coordenadas[indice]
-        coordenadas_espelhadas.append(espelha(x1, y1, *canto_face_esquerdo, *canto_face_direito))
-
-    coordenadas_espelhadas.insert(0, canto_face_esquerdo)
-    coordenadas_espelhadas.append(canto_face_direito)
-
-    return coordenadas_espelhadas
+    return roi
 
 def sulcoDireito(coordenadas):
-    def espelha(x1,y1, x2, y2, x3, y3):
-        """
-        (x1, y1) = Ponto que sera espelhado
-        (x2, y2), (x3, y3) = Pontos que definem a reta "espelho"
+    x1, y1 = coordenadas[86] # Ponto que sera espelhado
+    x2, y2 = coordenadas[82] # Primeiro ponto para definir a reta
+    x3, y3 = coordenadas[84] # Segundo ponto para definir a reta
+    
+    # Ponto novo criado artificialmente pelo espelhamento de (x1, y1) na reta definida por [(x2,y2), (x3,y3)]
+    ponto_espelhado = espelha(x1, y1, x2, y2, x3, y3)
 
-        Retorna (x4, y4) = Ponto espelhado
-        """
-        # y = mx + c
-        m = (y3-y2)/(x3-x2)
-        c = (x3*y2-x2*y3)/(x3-x2)
-        d = (x1 + (y1 - c)*m)/(1 + m**2)
+    roi = [82, 83, 61, 22, 21, 20] # Indices da maioria dos pontos da roi (falta o imaginario)
+    roi = [*map(lambda x: coordenadas[x], roi)] # Converte os indices para coordenadas (x, y)
+    roi.append(ponto_espelhado) # Adiciona o ponto espelhado
 
-        x4 = 2*d - x1
-        y4 = 2*d*m - y1 + 2*c
+    return roi
+    
+def bochechaDireita(coordenadas):
+    x1, y1 = coordenadas[86] # Ponto que sera espelhado
+    x2, y2 = coordenadas[82] # Primeiro ponto para definir a reta
+    x3, y3 = coordenadas[84] # Segundo ponto para definir a reta
+    
+    # Ponto novo criado artificialmente pelo espelhamento de (x1, y1) na reta definida por [(x2,y2), (x3,y3)]
+    ponto_espelhado = espelha(x1, y1, x2, y2, x3, y3)
 
-        return (int(x4), int(y4))
+    roi = [82, 30, 31, 32, 18, 19, 20] # Indices da maioria dos pontos da roi (falta o imaginario)
+    roi = [*map(lambda x: coordenadas[x], roi)] # Converte os indices para coordenadas (x, y)
+    roi.append(ponto_espelhado) # Adiciona o ponto espelhado
 
-    # Linha de divisao da testa (y = mx + c)
-    # Pontos da linha de divisao: (x1, y1), (x2, y2)
-    canto_face_esquerdo = coordenadas[83]
-    canto_face_direito = coordenadas[84]
-    indices_contorno = list(range(82,84))
-    indices_contorno.extend(list(range(83, 84, 1))) # [9, 10, ... 16, 32, 31, ... 25]
-    coordenadas_espelhadas = []
+    return roi
 
-    for indice in indices_contorno:
-        x1, y1 = coordenadas[indice]
-        coordenadas_espelhadas.append(espelha(x1, y1, *canto_face_esquerdo, *canto_face_direito))
+def bochechaEsquerda(coordenadas):
+    x1, y1 = coordenadas[86] # Ponto que sera espelhado
+    x2, y2 = coordenadas[76] # Primeiro ponto para definir a reta
+    x3, y3 = coordenadas[78] # Segundo ponto para definir a reta
+    
+    # Ponto novo criado artificialmente pelo espelhamento de (x1, y1) na reta definida por [(x2,y2), (x3,y3)]
+    ponto_espelhado = espelha(x1, y1, x2, y2, x3, y3)
 
-    coordenadas_espelhadas.insert(0, canto_face_esquerdo)
-    coordenadas_espelhadas.append(canto_face_direito)
+    roi = [76, 14, 15, 16, 2, 3, 4] # Indices da maioria dos pontos da roi (falta o imaginario)
+    roi = [*map(lambda x: coordenadas[x], roi)] # Converte os indices para coordenadas (x, y)
+    roi.append(ponto_espelhado) # Adiciona o ponto espelhado
 
-    return coordenadas_espelhadas
+    return roi
+
