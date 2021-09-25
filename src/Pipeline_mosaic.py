@@ -158,10 +158,12 @@ for face, data in faces.items():
         px_count, px_pct = Mask.statistics(mask)
         with Path(FACE_PATH, face, "face_data.json").open('r+') as json_file:
             data = json.load(json_file)
-            data['mask'] = {
+            mask_statistics = {
                 'pixel_count': int(px_count),
                 'pixel_count_pct': float(px_pct)
             }
+            try: data['mask'][label] = mask_statistics
+            except KeyError: data['mask'] = dict(label=mask_statistics)
             json_file.seek(0) # Retorna o cursor para o inicio
             json.dump(data, json_file) # Sobreescreve
             json_file.truncate() # Trunca o arquivo para tirar o conteudo antigo que permaneceu
