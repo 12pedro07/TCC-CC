@@ -3,13 +3,16 @@ import numpy as np                          # Matematica
 import pickle                               # Salvar e carregar arquivos binarios (faces)
 from datetime import datetime, timedelta    # Data e hora
 from pathlib import Path                    # Facilitar o uso de paths
+import json
 import insightface                          # Detectar face e pontos fiduciais
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
 from utils import *
 
 # ====== PARAMETROS ====== #
-INPUT_IMG_EXTENSION = "png"          # Extensao das imagens que serão carregadas
+IDENTIFIER = "UNIFESP_Completo"      # Identificador, usado para gerar a pasta com resultados
+DATASET = "Dataset_UNIFESP-SEM_APARATO-COMPLETO-360_IMAGENS-30_RN" # Dataset que deve ser executado
+INPUT_IMG_EXTENSION = "bmp"          # Extensao das imagens que serão carregadas
 OUTPUT_IMG_EXTENSION = "png"         # Extensao das imagens que serão geradas como saída
 DETECTION_APPROACH = DetectionMode.DETECTION_106 # Detector que sera utilizado para achar as faces dos bebes
 DOT_SIZE = 1
@@ -17,8 +20,8 @@ SHOW_NUMBERS = False
 
 # ====== PATHS PARA AS PASTAS ====== #
 # === DEFINIDOS PELO USUARIO
-dst_path = Path("..", "Results")                     # Path de destino, onde serão salvos os resultados
-Dataset_path = Path("..", "Dataset", "Exemplos_Artefatos_Rotacionados") # Path para o diretorio onde estao as imagens
+dst_path = Path("..", "Results", IDENTIFIER)                     # Path de destino, onde serão salvos os resultados
+Dataset_path = Path("..", "Dataset", DATASET) # Path para o diretorio onde estao as imagens
 # === GERADOS AUTOMATICAMENTE
 # Carrega o path para as imagens com e sem dor em dois generators
 path_cdor = Dataset_path.joinpath("com_dor").glob(f"*.{INPUT_IMG_EXTENSION}")
@@ -42,10 +45,6 @@ elif DETECTION_APPROACH == DetectionMode.DETECTION_106:
 else:
     print("Detector escolhido é invalido, consultar em utils.DetectionMode as opções disponiveis...")
     exit(-1)
-
-# ====== PARAMETROS AUXILIARES ====== #
-now = (datetime.utcnow()-timedelta(hours=3)).strftime("%Y-%m-%d_%H-%M-%S") # Data_hora atual no Brasil
-save_path = dst_path.joinpath(now) # Adiciona uma pasta pro processamento atual na pasta de destino
 
 # ====== FUNCOES ====== #
 def detect_face(img, mode=DETECTION_APPROACH, show_numbers=SHOW_NUMBERS):
@@ -89,9 +88,11 @@ def detect_face(img, mode=DETECTION_APPROACH, show_numbers=SHOW_NUMBERS):
 
 # ====== MAIN ====== #
 # Carrega cada par de imagens de bebes com e sem dor
-for pain_class, imgs_path in [("sdor", path_sdor), ("cdor", path_cdor)]:
+for pain_class, imgs_path in [("sem dor", path_sdor), ("com dor", path_cdor)]:
     for img_path in imgs_path:
         print(">>> Imagem ", str(img_path.stem))
+        save_path = dst_path / img_path.stem
+        save_path.mkdir(parents=True, exist_ok=True)
         # === INICIALIZAÇÃO
         print("\t|-> Carregando imagem...")
         img = cv2.imread(str(img_path)) # Carrega a imagem com dor
@@ -100,34 +101,35 @@ for pain_class, imgs_path in [("sdor", path_sdor), ("cdor", path_cdor)]:
         # Encontra as faces
         img_marked, faces = detect_face(img)
         # Salva a imagem na pasta de destino com a data atual
-        detection_path = save_path.joinpath("detection")
-        detection_path.mkdir(parents=True, exist_ok=True) # Cria o diretorio de destino para as detecções
         print("\t|-> Salvando imagem com as faces detectadas... ", end='')
         if len(faces) > 0:
             cv2.imwrite(
-                str(detection_path.joinpath(f"{img_path.stem}_{pain_class}_marked.{OUTPUT_IMG_EXTENSION}")), # Path e nome do arquivo
+                str(save_path / f"detection.{OUTPUT_IMG_EXTENSION}"), # Path e nome do arquivo
                 img_marked # Imagem
             ) # Salva imagem completa
             print("OK")
         else:
             print("Nao houveram deteccoes")
-        # === SALVANDO FACES
-        print(f"\t|-> Salvando faces em arquivo binario (.pkl)...", end='')
+        # === SALVANDO PONTOS DA FACES E METADADOS
+        print(f"\t|-> Salvando faces e metadados (.json)...", end='')
         if len(faces) > 0:
-            detection_path = save_path.joinpath("faces") # Gerando o caminho para a pasta das faces
-            detection_path.mkdir(parents=True, exist_ok=True) # Cria o diretorio de destino para as faces detectadas
-            face_file_path = detection_path.joinpath("{}.pkl".format(img_path.stem)) # Gerando o caminho para o arquivo binario
-            with face_file_path.open('wb') as ffp:
-                faces_dict = [dict(face) for face in faces] # As faces ficam em uma subclasse de dicionario criada pelo insightface
-                                                            # que nao eh serializavel, entao para salvar temos que fazer upcasting para dicionario
-                pickle.dump(faces_dict, ffp) # Faz o dump da lista de dicionarios para o arquivo binario
+            with (save_path / "face_data.json").open('w') as ffp:
+                face = faces[0]
+                json.dump(
+                    {
+                        "timestamp": (datetime.utcnow()-timedelta(hours=3)).strftime("%Y-%m-%d_%H-%M-%S"), # Data_hora atual no Brasil
+                        "label": pain_class,
+                        "dataset": DATASET,
+                        "identifier": IDENTIFIER,
+                        **{key: value.astype(float).tolist() if isinstance(value, np.ndarray) else value.astype(float) for key, value in dict(face).items()}
+                    }, 
+                    ffp
+                ) # Faz o dump da lista de dicionarios
             print("OK")
         else:
             print("Nao houveram deteccoes")
         # === CROP DAS FACES / SALVANDO CROP
         print("\t|-> Recortando faces da imagem")
-        crop_path = save_path.joinpath("crop") # Gerando o caminho para a pasta com os crops
-        crop_path.mkdir(parents=True, exist_ok=True) # Cria a pasta/diretorio dos crops
         # Itera pelas faces encontradas
         for idx in range(len(faces)):
             print(f"\t\t|-> Salvando Face {idx+1} de {len(faces)}... ", end='')
@@ -135,7 +137,7 @@ for pain_class, imgs_path in [("sdor", path_sdor), ("cdor", path_cdor)]:
             bboxes = face.bbox.astype(int) # Separa os pontos do bounding box e faz o cast para int (eles sao float)
             try:
                 cv2.imwrite(
-                    str(crop_path.joinpath("{}_{}_SCR{:.2f}_{}-{}.{}".format(img_path.stem, pain_class, face['det_score'], idx+1, len(faces), OUTPUT_IMG_EXTENSION))), # Path e nome do arquivo
+                    str(save_path / f"bbox_crop.{OUTPUT_IMG_EXTENSION}"), # Path e nome do arquivo
                     img[bboxes[1]:bboxes[3], # Y 
                         bboxes[0]:bboxes[2]] # X
                 )

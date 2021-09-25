@@ -2,11 +2,13 @@ import cv2
 import pickle
 import numpy as np
 from pathlib import Path
+from masks import Mask
+import json
 
 from mosaicos_complexos import *
 
 # === PARAMETROS DE DADOS
-RESULT_DATE = "2021-08-19_19-12-13"
+IDENTIFIER = "UNIFESP_Completo"
 MOSAICO = {
     "Face base": {
         "coords": [1,9,10,11,12,13,14,15,16,2,3,4,5,6,7,8,0,24,23,22,21,20,19,18,32,31,30,29,28,27,26,25,17],
@@ -80,38 +82,34 @@ MOSAICO_COMPLEXO = {
     }
 }
 
-RESULT_PATH = Path("..", "Results", RESULT_DATE, "mosaic")
 
 # === PARAMETROS DE DESENHO
 COLOR = (255,127,0)
 APHA = 0.4 # Em porcentagem
 LINE_THICKNESS = 2
 
-# === Cria a pasta dos resultados
-try:
-    RESULT_PATH.mkdir(parents=False, exist_ok=True)
-except FileNotFoundError:
-    print(f"Path {RESULT_PATH.parent} não existe... finalizando")
-    exit(100)
-
+FACE_PATH = Path("..", "Results", IDENTIFIER)
 
 # === Carrega os dados das faces dos arquivos binarios
-faces_data = {}
-for file_path in Path("..", "Results", RESULT_DATE, "faces").glob("*"):
-    with open(file_path, 'rb') as face_file:
-        try:
-            faces_data[file_path.stem] = pickle.load(face_file)[0] # Primeira imagem que tiver
-        except Exception as e:
-            print(f"Pulando {file_path}")
+faces = {}
+for file_path in FACE_PATH.glob("*"):
+    print(file_path)
+    try:
+        with open(file_path / "face_data.json") as f:
+            data = json.load(f)
+            faces[file_path.stem] = data
+    except FileNotFoundError:
+        pass
 
 # === Analisa cada face
-for face, data in faces_data.items():
-    img_sulco_esquerdo = []
+for face, data in faces.items():
     print("Criando mosaico da face ", face)
     # Procura a imagem correspondente no dataset
-    face_path = Path("..", "Dataset").glob(f"**/*{face}*")
+    face_found = False
+    face_path = Path("..", "Dataset", data['dataset']).glob(f"**/*{face}*")
     try: 
         face_path = next(face_path)
+        face_found = True
     except StopIteration: 
         print(f"Face {face} não encontrado no dataset...")
         continue
@@ -140,7 +138,33 @@ for face, data in faces_data.items():
             points_filtered = region_info["function"](data['landmark_2d_106'])
         # Reestrutura os dados conforme requisitado pela funcao de poligono e converte para inteiros
         points_filtered = np.array(points_filtered, dtype=np.int32).reshape((-1,1,2))
-        # Draw the region
+        # Cria o caminho para salvar a mascara e gera o diretorio se necessario
+        mask_file_path = FACE_PATH / face / "masks"
+        crop_file_path = FACE_PATH / face / "crops"
+        mask_file_path.mkdir(parents=True, exist_ok=True)
+        crop_file_path.mkdir(parents=True, exist_ok=True)
+        # Gera a mascara (e salva como arquivo para registro)
+        mask = Mask.generate(
+            img.shape, # Altura x Largura da mascara
+            points_filtered, # Pontos do poligono para criar a mascara
+            mask_file_path / f"{label}.jpg")
+        # Salva as estatisticas da mascara
+        px_count, px_pct = Mask.statistics(mask)
+        with Path(FACE_PATH, face, "face_data.json").open('r+') as json_file:
+            data = json.load(json_file)
+            data['mask'] = {
+                'pixel_count': int(px_count),
+                'pixel_count_pct': float(px_pct)
+            }
+            json_file.seek(0) # Retorna o cursor para o inicio
+            json.dump(data, json_file) # Sobreescreve
+            json_file.truncate() # Trunca o arquivo para tirar o conteudo antigo que permaneceu
+        # Gera o recorte usando a mascara
+        masked_image = Mask.apply(
+            img,
+            mask,
+            crop_file_path / f"{label}.jpg")
+        # Desenha a regiao recortada na imagem para registro
         overlay = cv2.fillPoly(
             overlay,            # Imagem
             [points_filtered],  # Vertices do poligono
@@ -151,6 +175,6 @@ for face, data in faces_data.items():
         print("OK")
     img = cv2.addWeighted(overlay, APHA, img, 1 - APHA, 0)
     # Salva o resultado
-    result_path = str(Path(RESULT_PATH, face+face_path.suffix))
+    result_path = str(Path(FACE_PATH, face, "mosaic"+face_path.suffix))
     cv2.imwrite(result_path, img)
     
