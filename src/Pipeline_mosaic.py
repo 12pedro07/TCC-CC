@@ -5,6 +5,7 @@ from pathlib import Path
 from masks import Mask
 import json
 
+from utils import change_reference
 from mosaicos_complexos import *
 
 # === PARAMETROS DE DADOS
@@ -93,7 +94,6 @@ FACE_PATH = Path("..", "Results", IDENTIFIER)
 # === Carrega os dados das faces dos arquivos binarios
 faces = {}
 for file_path in FACE_PATH.glob("*"):
-    print(file_path)
     try:
         with open(file_path / "face_data.json") as f:
             data = json.load(f)
@@ -115,6 +115,8 @@ for face, data in faces.items():
         continue
     # Carrega a imagem em memoria
     img = cv2.imread(str(face_path))
+    # Carrega a imagem da face em memoria
+    face_img = cv2.imread(str(FACE_PATH / face / "bbox_crop.png"))
     overlay = img.copy()
     if img is None:
         print(f"Erro ao carregar imagem {face_path}... pulando")
@@ -136,8 +138,12 @@ for face, data in faces.items():
         except KeyError:
             # Se nao conseguir, entao eh um mosaico complexo
             points_filtered = region_info["function"](data['landmark_2d_106'])
+        # Translada a origem para o canto superior esquerdo da bbox e converte as coordenadas
+        x_left, y_top, x_right, y_bottom = map(int, data['bbox'])
+        mask2origin = change_reference(0,0, x_left, y_top) # Funcao para converter as coordenadas da imagem p/ relativo a face
+        points_filtered_bbox = np.array(list(map(mask2origin, points_filtered)), dtype=np.int32).reshape((-1,1,2)) # Para usar com o rosto recortado
         # Reestrutura os dados conforme requisitado pela funcao de poligono e converte para inteiros
-        points_filtered = np.array(points_filtered, dtype=np.int32).reshape((-1,1,2))
+        points_filtered = np.array(points_filtered, dtype=np.int32).reshape((-1,1,2)) # Para usar na imagem completa
         # Cria o caminho para salvar a mascara e gera o diretorio se necessario
         mask_file_path = FACE_PATH / face / "masks"
         crop_file_path = FACE_PATH / face / "crops"
@@ -145,8 +151,8 @@ for face, data in faces.items():
         crop_file_path.mkdir(parents=True, exist_ok=True)
         # Gera a mascara (e salva como arquivo para registro)
         mask = Mask.generate(
-            img.shape, # Altura x Largura da mascara
-            points_filtered, # Pontos do poligono para criar a mascara
+            face_img.shape, # Altura x Largura da mascara
+            points_filtered_bbox, # Pontos do poligono para criar a mascara
             mask_file_path / f"{label}.jpg")
         # Salva as estatisticas da mascara
         px_count, px_pct = Mask.statistics(mask)
@@ -161,7 +167,7 @@ for face, data in faces.items():
             json_file.truncate() # Trunca o arquivo para tirar o conteudo antigo que permaneceu
         # Gera o recorte usando a mascara
         masked_image = Mask.apply(
-            img,
+            face_img,
             mask,
             crop_file_path / f"{label}.jpg")
         # Desenha a regiao recortada na imagem para registro
