@@ -163,7 +163,7 @@ for face, data in faces.items():
                 'pixel_count_pct': float(px_pct)
             }
             try: data['mask'][label] = mask_statistics
-            except KeyError: data['mask'] = dict(label=mask_statistics)
+            except KeyError: data['mask'] = {label: mask_statistics}
             json_file.seek(0) # Retorna o cursor para o inicio
             json.dump(data, json_file) # Sobreescreve
             json_file.truncate() # Trunca o arquivo para tirar o conteudo antigo que permaneceu
