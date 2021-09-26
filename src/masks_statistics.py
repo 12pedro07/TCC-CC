@@ -45,7 +45,7 @@ for idx, (label, values) in enumerate(total.items()):
     pcts_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
     # Plot result
-    axs[0].set_title('# De pixels 1 na mascara')
+    axs[0].set_title('# Pixels 1 na mascara')
     axs[0].hist(total[label], bins=50, density=True, facecolor='b')
     axs[0].text(0.55, 0.95, total_textstr, transform=axs[0].transAxes, fontsize=14,
             verticalalignment='top', bbox=total_props)
