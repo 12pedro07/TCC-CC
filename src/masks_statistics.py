@@ -11,14 +11,19 @@ pcts = {}
 
 # Itera na pasta de cada recem-nascido
 for dir in DATA_PATH.glob('*'):
-    with open(dir / 'face_data.json', 'r') as json_file:
-        data = json.load(json_file)
-        for key, value in data['mask'].items():
-            try: total[key].append(value['pixel_count'])
-            except KeyError: total[key] = [value['pixel_count']]
+    try: 
+        json_file = open(dir / 'face_data.json', 'r')
+    except FileNotFoundError: 
+        print(dir.stem, " has no json file... skipping")
+        continue
+    data = json.load(json_file)
+    for key, value in data['mask'].items():
+        try: total[key].append(value['pixel_count'])
+        except KeyError: total[key] = [value['pixel_count']]
 
-            try: pcts[key].append(value['pixel_count_pct']*100)
-            except KeyError: pcts[key] = [value['pixel_count_pct']*100]
+        try: pcts[key].append(value['pixel_count_pct']*100)
+        except KeyError: pcts[key] = [value['pixel_count_pct']*100]
+    json_file.close()
 
 for idx, (label, values) in enumerate(total.items()):
     fig, axs = plt.subplots(1, 2, figsize=(10,7))
