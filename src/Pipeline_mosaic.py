@@ -7,6 +7,7 @@ import json
 
 from utils import change_reference
 from mosaicos_complexos import *
+from helpers import infla_poligono
 
 # === PARAMETROS DE DADOS
 IDENTIFIER = "UNIFESP_Completo"
@@ -14,42 +15,50 @@ MOSAICO = {
     "Face base": {
         "coords": [1,9,10,11,12,13,14,15,16,2,3,4,5,6,7,8,0,24,23,22,21,20,19,18,32,31,30,29,28,27,26,25,17],
         "color": (255,255,255),
-        "priority": 10
+        "priority": 0,
+        "inflation": 0
     },
     "Sombrancelha esquerda": {
         "coords": [43,48,49,51,50,46,47,45,44],
         "color": (0,255,255),
-        "priority": 10
+        "priority": 10,
+        "inflation": 0.1
     },
     "Sombrancelha direita": {
         "coords": [101,100,99,98,97,102,103,104,105],
         "color": (0,255,255),
-        "priority": 10
+        "priority": 10,
+        "inflation": 0.1
     },
     "Olho esquerdo": {
         "coords": [35,36,33,37,39,75,46,47,45,44,43],
         "color": (255,0,255),
-        "priority": 10
+        "priority": 9,
+        "inflation": 0.1
     },
     "Olho direito": {
         "coords": [81,89,90,87,91,93,101,100,99,98,97],
         "color": (255,0,255),
-        "priority": 10
+        "priority": 9,
+        "inflation": 0.1
     },
     "Nariz": {
         "coords": [72,75,76,77,78,79,80,85,84,83,82,81],
         "color": (0,255,0),
-        "priority": 10
+        "priority": 8,
+        "inflation": 0.1
     },
     "Entre olhos": {
         "coords": [49,51,50,46,39,75,72,81,89,97,102,103,104],
         "color": (255,0,0),
-        "priority": 10
+        "priority": 8,
+        "inflation": 0.1
     },
     "Boca": {
         "coords": [52,55,56,53,59,58,61,68,67,63,64],
         "color": (0,0,255),
-        "priority": 10
+        "priority": 10,
+        "inflation": 0.1
     }
 }
 MOSAICO_COMPLEXO = { 
@@ -59,35 +68,38 @@ MOSAICO_COMPLEXO = {
     "Testa": {
         "function": testa,
         "color": (63,63,255),
-        "priority": 5
+        "priority": 5,
+        "inflation": 0.1
     },
     "Sulco Esquerda": {
         "function": sulcoEsquerdo,
         "color": (1, 0, 0),
-        "priority": 20
+        "priority": 20,
+        "inflation": 0.1
     },
     "Sulco Direito": {
         "function": sulcoDireito,
         "color": (1, 0, 0),
-        "priority": 20
+        "priority": 20,
+        "inflation": 0.1
     },
     "Bochecha esquerda": {
         "function": bochechaEsquerda,
         "color": (255, 0, 0),
-        "priority": 20
+        "priority": 20,
+        "inflation": 0.1
     },
     "Bochecha direita": {
         "function": bochechaDireita,
         "color": (255, 0, 0),
-        "priority": 20
+        "priority": 20,
+        "inflation": 0.1
     }
 }
 
 
 # === PARAMETROS DE DESENHO
-COLOR = (255,127,0)
 APHA = 0.4 # Em porcentagem
-LINE_THICKNESS = 2
 
 FACE_PATH = Path("..", "Results", IDENTIFIER)
 
@@ -138,6 +150,8 @@ for face, data in faces.items():
         except KeyError:
             # Se nao conseguir, entao eh um mosaico complexo
             points_filtered = region_info["function"](data['landmark_2d_106'])
+        points_filtered = infla_poligono(points_filtered, fator=region_info['inflation'], inflar=True)
+
         # Translada a origem para o canto superior esquerdo da bbox e converte as coordenadas
         x_left, y_top, x_right, y_bottom = map(int, data['bbox'])
         mask2origin = change_reference(0,0, x_left, y_top) # Funcao para converter as coordenadas da imagem p/ relativo a face
