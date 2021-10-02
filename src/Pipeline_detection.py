@@ -10,8 +10,8 @@ from insightface.data import get_image as ins_get_image
 from utils import *
 
 # ====== PARAMETROS ====== #
-IDENTIFIER = "UNIFESP_Completo"      # Identificador, usado para gerar a pasta com resultados
-DATASET = "Dataset_UNIFESP-SEM_APARATO-COMPLETO-360_IMAGENS-30_RN" # Dataset que deve ser executado
+IDENTIFIER = "UNIFESP"      # Identificador, usado para gerar a pasta com resultados
+DATASET = "UNIFESP" # Dataset que deve ser executado
 INPUT_IMG_EXTENSION = "bmp"          # Extensao das imagens que serão carregadas
 OUTPUT_IMG_EXTENSION = "png"         # Extensao das imagens que serão geradas como saída
 DETECTION_APPROACH = DetectionMode.DETECTION_106 # Detector que sera utilizado para achar as faces dos bebes
