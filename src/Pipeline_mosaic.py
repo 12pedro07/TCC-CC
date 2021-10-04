@@ -128,8 +128,9 @@ for face, data in faces.items():
     # Carrega a imagem em memoria
     img = cv2.imread(str(face_path))
     # Carrega a imagem da face em memoria
-    face_img = cv2.imread(str(FACE_PATH / face / "bbox_crop.png"))
+    face_img = cv2.imread(str(FACE_PATH / face / "bbox_crop-affine.png"))
     overlay = img.copy()
+    overlay_face = face_img.copy()
     if img is None:
         print(f"Erro ao carregar imagem {face_path}... pulando")
         continue
@@ -147,17 +148,17 @@ for face, data in faces.items():
             points = region_info["coords"]
             # Separando e filtrando coordenadas da regiao do mosaico
             points_filtered = [data['landmark_2d_106'][index] for index in points] # Pega a coordenada dos landmarks referente ao label atual
+            points_filtered_face = [data['landmark_2d_106-crop_affine'][index] for index in points] # Pega a coordenada dos landmarks referente ao label atual
         except KeyError:
             # Se nao conseguir, entao eh um mosaico complexo
             points_filtered = region_info["function"](data['landmark_2d_106'])
+            points_filtered_face = region_info["function"](data['landmark_2d_106-crop_affine'])
         points_filtered = infla_poligono(points_filtered, fator=region_info['inflation'], inflar=True)
+        points_filtered_face = infla_poligono(points_filtered_face, fator=region_info['inflation'], inflar=True)
 
-        # Translada a origem para o canto superior esquerdo da bbox e converte as coordenadas
-        x_left, y_top, x_right, y_bottom = map(int, data['bbox'])
-        mask2origin = change_reference(0,0, x_left, y_top) # Funcao para converter as coordenadas da imagem p/ relativo a face
-        points_filtered_bbox = np.array(list(map(mask2origin, points_filtered)), dtype=np.int32).reshape((-1,1,2)) # Para usar com o rosto recortado
         # Reestrutura os dados conforme requisitado pela funcao de poligono e converte para inteiros
         points_filtered = np.array(points_filtered, dtype=np.int32).reshape((-1,1,2)) # Para usar na imagem completa
+        points_filtered_face = np.array(points_filtered_face, dtype=np.int32).reshape((-1,1,2)) # Para usar na imagem completa
         # Cria o caminho para salvar a mascara e gera o diretorio se necessario
         mask_file_path = FACE_PATH / face / "masks"
         crop_file_path = FACE_PATH / face / "crops"
@@ -166,7 +167,7 @@ for face, data in faces.items():
         # Gera a mascara (e salva como arquivo para registro)
         mask = Mask.generate(
             face_img.shape, # Altura x Largura da mascara
-            points_filtered_bbox, # Pontos do poligono para criar a mascara
+            points_filtered_face, # Pontos do poligono para criar a mascara
             mask_file_path / f"{label}.jpg")
         # Salva as estatisticas da mascara
         px_count, px_pct = Mask.statistics(mask)
@@ -193,10 +194,18 @@ for face, data in faces.items():
             color,              # Cor da linha
             cv2.LINE_AA         # Tipo de linha
         )
+        overlay_face = cv2.fillPoly(
+            overlay_face,            # Imagem
+            [points_filtered_face],  # Vertices do poligono
+            color,                   # Cor da linha
+            cv2.LINE_AA              # Tipo de linha
+        )
         # Adiciona o overlay com alpha por cima da imagem
         print("OK")
     img = cv2.addWeighted(overlay, APHA, img, 1 - APHA, 0)
+    face_img = cv2.addWeighted(overlay_face, APHA, face_img, 1 - APHA, 0)
     # Salva o resultado
-    result_path = str(Path(FACE_PATH, face, "mosaic"+face_path.suffix))
-    cv2.imwrite(result_path, img)
+    result_path = Path(FACE_PATH, face)
+    cv2.imwrite(str(result_path / ("mosaic"+face_path.suffix)), img)
+    cv2.imwrite(str(result_path / ("mosaic_face-"+face_path.suffix)), face_img)
     

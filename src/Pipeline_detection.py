@@ -4,6 +4,7 @@ import pickle                               # Salvar e carregar arquivos binario
 from datetime import datetime, timedelta    # Data e hora
 from pathlib import Path                    # Facilitar o uso de paths
 import json
+from functools import partial               # Facilitar o mapeamento de funcoes
 import insightface                          # Detectar face e pontos fiduciais
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
@@ -17,6 +18,7 @@ OUTPUT_IMG_EXTENSION = "png"         # Extensao das imagens que serão geradas c
 DETECTION_APPROACH = DetectionMode.DETECTION_106 # Detector que sera utilizado para achar as faces dos bebes
 DOT_SIZE = 1
 SHOW_NUMBERS = False
+DESIRED_BBOX_SIZE = 68 # 68x68, mantendo o aspect ratio e completando o necessário com bordas pretas
 
 # ====== PATHS PARA AS PASTAS ====== #
 # === DEFINIDOS PELO USUARIO
@@ -101,47 +103,72 @@ for pain_class, imgs_path in [("sem dor", path_sdor), ("com dor", path_cdor)]:
         # Encontra as faces
         img_marked, faces = detect_face(img)
         # Salva a imagem na pasta de destino com a data atual
-        print("\t|-> Salvando imagem com as faces detectadas... ", end='')
         if len(faces) > 0:
+            print("\t|-> Salvando imagem com as faces detectadas... ", end='')
+            if len(faces) > 1: print(" [Multiplas faces encontradas, usando apenas a primeira] ", end='')
             cv2.imwrite(
                 str(save_path / f"detection.{OUTPUT_IMG_EXTENSION}"), # Path e nome do arquivo
                 img_marked # Imagem
             ) # Salva imagem completa
             print("OK")
-        else:
-            print("Nao houveram deteccoes")
-        # === SALVANDO PONTOS DA FACES E METADADOS
-        print(f"\t|-> Salvando faces e metadados (.json)...", end='')
-        if len(faces) > 0:
+            
+            # === CROP DAS FACES / SALVANDO CROP
+            print(f"\t|-> Recortando Face... ", end='')
+            face = faces[0] # Extrai o objeto que contem os pontos da face
+            bboxes = face['bbox'].astype(int) # Separa os pontos do bounding box e faz o cast para int (eles sao float)
+            old_shape = (bboxes[2] - bboxes[0], bboxes[3] - bboxes[1]) # Shape da bounding box da imagem original
+
+            face_img = img[bboxes[1]:bboxes[3], bboxes[0]:bboxes[2]].copy() # Recorta a face da imagem
+            cropped_img, borders, new_shape = resize_and_border(face_img, DESIRED_BBOX_SIZE) # Redimensiona e aplica borda na bbox recortada
+
+            rotate = partial(resize_point, old_shape=old_shape, new_shape=new_shape, border_left=borders['left'], border_top=borders['top']) # Fixa os parametros de old shape e new shape na funcao resize point
+            mask2origin = change_reference(0,0, bboxes[0], bboxes[1]) # Funcao auxiliar para posicionar a origem (0,0) no canto superior esquerdo da bbox
+            face_points = list(map(mask2origin, face['landmark_2d_106'])) # Converte as coordenadas dos pontos fiduciais p/ a nova origem
+            face_points = list(map(rotate, face_points)) # Redimensiona e reposiciona os pontos igual a bonding box
+
+            src_3 = equilateral_triangle(face_points[35], face_points[93])
+            dst_1 = [DESIRED_BBOX_SIZE*0.2, DESIRED_BBOX_SIZE/3]
+            dst_2 = [DESIRED_BBOX_SIZE*0.8, DESIRED_BBOX_SIZE/3]
+            dst_3 = equilateral_triangle(dst_1, dst_2)
+
+            cropped_img_affine, affine_matrix = affine_transform(
+                cropped_img, 
+                np.float32([face_points[35], face_points[93], src_3]), 
+                np.float32([dst_1, dst_2, dst_3])
+            )
+            face_points = cv2.transform( np.array([face_points]),affine_matrix)[0].tolist()
+
+            try:
+                cv2.imwrite(
+                    str(save_path / f"bbox_crop-affine.{OUTPUT_IMG_EXTENSION}"), # Path e nome do arquivo
+                    cropped_img_affine
+                )
+                cv2.imwrite(
+                    str(save_path / f"bbox_crop.{OUTPUT_IMG_EXTENSION}"), # Path e nome do arquivo
+                    cropped_img
+                )
+                print("OK")
+            except Exception as ex:
+                print(f"Falha - {repr(ex)}")
+        
+            # === SALVANDO PONTOS DA FACES E METADADOS
+            print(f"\t|-> Salvando faces e metadados (.json)...", end='')
             with (save_path / "face_data.json").open('w') as ffp:
-                face = faces[0]
                 json.dump(
                     {
                         "timestamp": (datetime.utcnow()-timedelta(hours=3)).strftime("%Y-%m-%d_%H-%M-%S"), # Data_hora atual no Brasil
                         "label": pain_class,
+                        "borders": borders,
+                        "face_shape": new_shape,
                         "dataset": DATASET,
                         "identifier": IDENTIFIER,
-                        **{key: value.astype(float).tolist() if isinstance(value, np.ndarray) else value.astype(float) for key, value in dict(face).items()}
+                        **{key: value.astype(float).tolist() if isinstance(value, np.ndarray) else value.astype(float) for key, value in dict(face).items()},
+                        "landmark_2d_106-crop_affine": face_points
                     }, 
                     ffp
                 ) # Faz o dump da lista de dicionarios
             print("OK")
         else:
             print("Nao houveram deteccoes")
-        # === CROP DAS FACES / SALVANDO CROP
-        print("\t|-> Recortando faces da imagem")
-        # Itera pelas faces encontradas
-        for idx in range(len(faces)):
-            print(f"\t\t|-> Salvando Face {idx+1} de {len(faces)}... ", end='')
-            face = faces[idx] # Extrai o objeto que contem os pontos da face
-            bboxes = face.bbox.astype(int) # Separa os pontos do bounding box e faz o cast para int (eles sao float)
-            try:
-                cv2.imwrite(
-                    str(save_path / f"bbox_crop.{OUTPUT_IMG_EXTENSION}"), # Path e nome do arquivo
-                    img[bboxes[1]:bboxes[3], # Y 
-                        bboxes[0]:bboxes[2]] # X
-                )
-                print("OK")
-            except Exception as ex:
-                print(f"Falha - {repr(ex)}")
+
         print()
