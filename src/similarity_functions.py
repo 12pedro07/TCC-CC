@@ -1,5 +1,8 @@
 import numpy as np
 import cv2
+# from scipy.stats import entropy
+from helpers import entropy
+
 def MSE(img1, img2):
     """
     MSE - Mean Squared Error
@@ -16,26 +19,64 @@ def PCC(img1, img2):
     I2 = img2 - (img2).mean(axis=None)
 
     numerador = (I1*I2).sum()
-    print(numerador)
 
     I1_ = np.sqrt((I1**2).sum())
     I2_ = np.sqrt((I2**2).sum())
 
     denominador = I1_ * I2_
-    print(denominador)
 
     return numerador/denominador
 
 
 
-def MI():
+def MI(img1, img2, mask):
     """
     MI - Mutual Information
     """
-    return 0
+    masked_pixel_count = sum(sum(mask))
+    
+    hist1 = cv2.calcHist(
+        [img1],     # Imagem (Imagem encapsulada em uma lista)
+        [0],        # Canais (Apenas o canal 0)
+        mask,       # Mascara
+        [256],      # Shape do Histograma (1 canal 256 bins)
+        [0,256]     # Range das intensidades dos pixels
+    )
+    hist2 = cv2.calcHist(
+        [img2],
+        [0],
+        mask,
+        [256],
+        [0,256]
+    )
+    
+    pdf1 = hist1/masked_pixel_count
+    pdf2 = hist2/masked_pixel_count
+    pdf_joint = pdf1*pdf2.T
 
-img1 = cv2.imread(r"../RESULTS/UNIFESP/UNIFESP/01_113852/bbox_crop-affine.png", 0)
+    entropy1 = entropy(pdf1)
+    entropy2 = entropy(pdf2)
+    entropy_joint = entropy(pdf_joint)
+    # entropy_joint = entropy(pdf1, pdf2, base=2)
 
-img2 = cv2.imread(r"../RESULTS/face_media-sem_filtro.jpg", 0)
+    return entropy1 + entropy2 - entropy_joint
 
-print(MSE(img1, img2))
+face_media = cv2.imread("../Results/plots_unifesp_reference/face_media-sem_filtro.jpg", 0)
+face = cv2.imread("../Results/UNIFESP/01_113852/bbox_crop-affine.png", 0)
+face_dor = cv2.imread("../Results/ARTEFATOS/20190322_152942/bbox_crop-affine.png", 0)
+mask = (cv2.imread("../Results/UNIFESP/01_113852/masks/Olho esquerdo.jpg", 0)/255).astype(np.uint8)
+
+print(">>> ITSELF <<<")
+print("MSE: ", MSE(face, face))
+print("PCC: ", PCC(face, face))
+print("MI: ", MI(face, face, mask))
+
+print(">>> SEM DOR <<<")
+print("MSE: ", MSE(face, face_media))
+print("PCC: ", PCC(face, face_media))
+print("MI: ", MI(face, face_media, mask))
+
+print(">>> COM DOR <<<")
+print("MSE: ", MSE(face_dor, face_media))
+print("PCC: ", PCC(face_dor, face_media))
+print("MI: ", MI(face_dor, face_media, mask))
