@@ -57,26 +57,5 @@ def MI(img1, img2, mask):
     entropy1 = entropy(pdf1)
     entropy2 = entropy(pdf2)
     entropy_joint = entropy(pdf_joint)
-    # entropy_joint = entropy(pdf1, pdf2, base=2)
 
     return entropy1 + entropy2 - entropy_joint
-
-face_media = cv2.imread("../Results/plots_unifesp_reference/face_media-sem_filtro.jpg", 0)
-face = cv2.imread("../Results/UNIFESP/01_113852/bbox_crop-affine.png", 0)
-face_dor = cv2.imread("../Results/ARTEFATOS/20190322_152942/bbox_crop-affine.png", 0)
-mask = (cv2.imread("../Results/UNIFESP/01_113852/masks/Olho esquerdo.jpg", 0)/255).astype(np.uint8)
-
-print(">>> ITSELF <<<")
-print("MSE: ", MSE(face, face))
-print("PCC: ", PCC(face, face))
-print("MI: ", MI(face, face, mask))
-
-print(">>> SEM DOR <<<")
-print("MSE: ", MSE(face, face_media))
-print("PCC: ", PCC(face, face_media))
-print("MI: ", MI(face, face_media, mask))
-
-print(">>> COM DOR <<<")
-print("MSE: ", MSE(face_dor, face_media))
-print("PCC: ", PCC(face_dor, face_media))
-print("MI: ", MI(face_dor, face_media, mask))
