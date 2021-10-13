@@ -41,10 +41,3 @@ def infla_poligono(poligono, fator=0.10, inflar=True):
             polygon_resized = polygon.buffer(-shrink_distance) #shrink
         return np.array(list(zip(polygon_resized.exterior.coords.xy[0], polygon_resized.exterior.coords.xy[1])))
 
-def entropy(pdf):
-    entropy_ = 0
-    for row in pdf:
-        for value in row:
-            if value != 0:
-                entropy_ += value*np.log2(1/value)
-    return entropy_
