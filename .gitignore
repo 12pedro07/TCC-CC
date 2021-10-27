@@ -2,6 +2,7 @@
 Dataset/*
 Models/*
 Results/*
+wvc/*
 
 # Arquivos e diretorios ocultos
 .pylintrc

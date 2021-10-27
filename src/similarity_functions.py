@@ -1,8 +1,7 @@
 import numpy as np
-import cv2
-# from scipy.stats import entropy
+from scipy.stats import entropy
 
-def entropy(pdf):
+def entropy_(pdf):
     entropy_ = 0
     for row in pdf:
         for value in row:
@@ -10,59 +9,52 @@ def entropy(pdf):
                 entropy_ += value*np.log2(1/value)
     return entropy_
 
-def MSE(img1, img2):
+def MSE(img1, img2, mask):
     """
     MSE - Mean Squared Error
     """
-    return ((img1 - img2 )**2).mean(axis=None)
+    img1 = img1.astype(np.float64)
+    img2 = img2.astype(np.float64)
 
-def PCC(img1, img2):
+    squared_img = (img1-img2)**2
+    masked_np = np.ma.array(squared_img, mask=mask==0)
+    return masked_np.mean()
 
+def PCC(img1, img2, mask):
     """
     PCC - Pearson Correlation Coefficient
     """
 
-    I1 = img1 - (img1).mean(axis=None)
-    I2 = img2 - (img2).mean(axis=None)
+    img1 = img1.astype(np.float64)
+    img2 = img2.astype(np.float64)
 
-    numerador = (I1*I2).sum()
+    masked_array1 = np.ma.array(img1, mask=mask==0) # Filtrando regiao 0 da mascara na imagem 1
+    masked_array2 = np.ma.array(img2, mask=mask==0)
+    I1 = masked_array1 - masked_array1.mean(axis=None)
+    I2 = masked_array2 - masked_array2.mean(axis=None)
+    numerador = (I1*I2).sum(axis=None)
 
-    I1_ = np.sqrt((I1**2).sum())
-    I2_ = np.sqrt((I2**2).sum())
-
+    I1_ = np.sqrt((masked_array1**2).sum(axis=None))
+    I2_ = np.sqrt((masked_array2**2).sum(axis=None))
     denominador = I1_ * I2_
 
     return numerador/denominador
-
-
 
 def MI(img1, img2, mask):
     """
     MI - Mutual Information
     """
-    masked_pixel_count = sum(sum(mask))
-    
-    hist1 = cv2.calcHist(
-        [img1],     # Imagem (Imagem encapsulada em uma lista)
-        [0],        # Canais (Apenas o canal 0)
-        mask,       # Mascara
-        [256],      # Shape do Histograma (1 canal 256 bins)
-        [0,256]     # Range das intensidades dos pixels
-    )
-    hist2 = cv2.calcHist(
-        [img2],
-        [0],
-        mask,
-        [256],
-        [0,256]
-    )
-    
-    pdf1 = hist1/masked_pixel_count
-    pdf2 = hist2/masked_pixel_count
-    pdf_joint = pdf1*pdf2.T
 
-    entropy1 = entropy(pdf1)
-    entropy2 = entropy(pdf2)
-    entropy_joint = entropy(pdf_joint)
+    hist_2d, _, _ = np.histogram2d(
+        img1.ravel(),
+        img2.ravel(),
+        bins=20,
+        weights=mask.ravel())
 
-    return entropy1 + entropy2 - entropy_joint
+    pxy = hist_2d / float(np.sum(hist_2d))
+    px = np.sum(pxy, axis=1) # marginal for x over y
+    py = np.sum(pxy, axis=0) # marginal for y over x
+    px_py = px[:, None] * py[None, :] # Broadcast to multiply marginals
+    # Now we can do the calculation using the pxy, px_py 2D arrays
+    nzs = pxy > 0 # Only non-zero pxy values contribute to the sum
+    return np.sum(pxy[nzs] * np.log(pxy[nzs] / px_py[nzs]))
