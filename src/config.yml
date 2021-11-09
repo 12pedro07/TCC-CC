@@ -1,6 +1,6 @@
 # ====== STRING ====== #
-output: teste2 # Name to identify the output
-input_dataset: Exemplos_Artefatos_Rotacionados # Name of the input dataset directory
+output: Pipeline_Output # Name to identify the output
+input_dataset: Dataset # Name of the input dataset directory (it must be under the )
 output_extension: .jpg # Extension for the output images (.jpg, .png, .bmp ...)
 log_level: INFO # Log level. Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
