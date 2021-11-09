@@ -1,24 +1,38 @@
 version: '3'
 services:
-  nvsmi:
+  MosaicPipeline-cpu:
     hostname: '$host'
-    image: tcc-image
-    runtime: nvidia
+    image: mosaic-image-cpu
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - CMD_LINE=$CMD_LINE
+      - CTX_ID=-1
+      - PYTHONUNBUFFERED=1
     build:
       context: ./
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-cpu
     command:
-      # === Para executar o pipeline uma vez e parar
-      # python Pipeline_detection.py
-      python Pipeline_mosaic.py
-      # === Para ligar o container e deixar rodando
-      # tail -f Pipeline_detection.py
+      python run.py
     volumes:
       - ./src:/src
       - ./Dataset:/Dataset
       - ./Models:/root/.insightface/models/
       - ./Results:/Results
-    container_name: 'tcc-container'
+    container_name: mosaic-container-cpu
+  MosaicPipeline-gpu:
+    hostname: '$host'
+    image: mosaic-image-gpu
+    runtime: nvidia
+    environment:
+      - CTX_ID=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - PYTHONUNBUFFERED=1
+    build:
+      context: ./
+      dockerfile: Dockerfile-gpu
+    command:
+      python -u run.py
+    volumes:
+      - ./src:/src
+      - ./Dataset:/Dataset
+      - ./Models:/root/.insightface/models/
+      - ./Results:/Results
+    container_name: mosaic-container-gpu

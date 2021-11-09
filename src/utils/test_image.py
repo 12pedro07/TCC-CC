@@ -4,10 +4,10 @@ import cv2
 import numpy as np
 from masks import Mask
 
-dir = Path("..", "Results", "ARTEFATOS", "20190322_152946")
+dir = Path("..", "..", "Results", "ARTEFATOS", "20190322_152946")
 img_trans_afim_rosto = cv2.imread(str(dir / "bbox_crop-affine.png"), 0)
 
-face_media_geral = Path("..", "Results", "face_mediana.jpg")
+face_media_geral = Path("..", "..", "Results", "face_mediana.jpg")
 img_face_media_geral = cv2.imread(str(face_media_geral), 0)
 
 for regions in list((dir / "masks" ).glob("*")):
