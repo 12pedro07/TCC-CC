@@ -3,7 +3,7 @@ import json
 import cv2
 import numpy as np
 
-results_path = Path("..", "Results", "UNIFESP")
+results_path = Path("..", "..", "Results", "UNIFESP")
 
 results = {
     'com dor': {
