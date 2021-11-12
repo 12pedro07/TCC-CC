@@ -177,8 +177,8 @@ class Pipeline:
                 # 4.3. Reshape data and cat to int32
                 points_filtered_face = np.array(points_filtered_face, dtype=np.int32).reshape((-1,1,2)) # Face image
                 # 4.4. Create the necessary directories
-                dataset_mask_path = self.output_dataset_path / "Mascaras" / face_data.get('label', 'desconhecido')
-                dataset_crop_path = self.output_dataset_path / "Regioes" / face_data.get('label', 'desconhecido')
+                dataset_mask_path = self.output_dataset_path / "Mascaras" / face_data.get('label', 'desconhecido') / label
+                dataset_crop_path = self.output_dataset_path / "Regioes" / face_data.get('label', 'desconhecido') / label
                 dataset_mask_path.mkdir(parents=True, exist_ok=True)
                 dataset_crop_path.mkdir(parents=True, exist_ok=True)
                 # 4.5. Generate the binary mask
