@@ -11,3 +11,6 @@ src/Logs
 
 # Extensoes
 *.pyc
+
+# Exceptions
+!**/*.md
