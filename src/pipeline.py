@@ -196,8 +196,8 @@ class Pipeline:
                     points_filtered = self._dilate_polygon(points_filtered, pct=region_info['inflation'], dilate=True) # For the complete image
                     points_filtered = np.array(points_filtered, dtype=np.int32).reshape((-1,1,2)) # Complete image
                     # Create the necessary directories
-                    mask_file_path = face_results_path / "masks" / label
-                    crop_file_path = face_results_path / "crops" / label
+                    mask_file_path = face_results_path / "masks"
+                    crop_file_path = face_results_path / "crops"
                     mask_file_path.mkdir(parents=True, exist_ok=True)
                     crop_file_path.mkdir(parents=True, exist_ok=True)
                     # Generate the binary mask
@@ -209,7 +209,7 @@ class Pipeline:
                     Mask.apply(
                         face_img,
                         mask,
-                        mask_file_path / f"{label}{self.output_extension}")
+                        crop_file_path / f"{label}{self.output_extension}")
                     # Draw the mask on the complete image
                     overlay = cv2.fillPoly(
                         overlay,                 # Image
