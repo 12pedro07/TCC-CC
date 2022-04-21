@@ -39,8 +39,9 @@ class Pipeline:
 
     # ====== PIPELINE STEPS (PUBLIC) ====== #
     def detection(self) -> None:
+        ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']
         # === Create the detection object
-        self.app = FaceAnalysis(allowed_modules=['detection', 'landmark_2d_106']) # Detect and Use Regression for 106 2d keypoints
+        self.app = FaceAnalysis(allowed_modules=['detection', 'landmark_2d_106'], providers=['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']) # Detect and Use Regression for 106 2d keypoints
         self.app.prepare(ctx_id=self.ctx_id, det_size=(self.det_size, self.det_size)) # Set gpu/cpu and kernel size
         # === Read all images from the "sem_dor" and "com_dor" subfolders of the dataset
         for pain_class, imgs_path in [("sem_dor", self.path_nopain), ("com_dor", self.path_pain)]:
