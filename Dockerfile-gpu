@@ -37,10 +37,10 @@ ENV PATH=${CONDA_PREFIX}/lib/python3.7/site-packages/pandoc:$PATH
 RUN pip install insightface
 
 # Install opencv
-RUN pip install opencv-python==4.3.0.36 opencv-contrib-python==4.3.0.36 opencv-python-headless==4.5.1.48
+RUN pip install opencv-python-headless==4.5.1.48
 
 # Install other usefull packages
-RUN pip install numpy pathlib shapely
+RUN pip install numpy shapely
 
 # enable cuda
 ARG FORCE_CUDA="1"
