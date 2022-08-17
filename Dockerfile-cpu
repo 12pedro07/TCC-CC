@@ -27,7 +27,7 @@ ENV CONDA_AUTO_UPDATE_CONDA=false
 
 # Install insightface and dependencies
 RUN apt-get install -y pandoc
-RUN pip install onnxruntime-gpu Cython pypandoc pandoc mxnet
+RUN pip install onnxruntime-gpu Cython pypandoc==1.7.5 pandoc mxnet
 ENV PATH=${CONDA_PREFIX}/lib/python3.7/site-packages/pandoc:$PATH
 RUN pip install insightface
 
