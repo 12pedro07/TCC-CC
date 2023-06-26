@@ -13,14 +13,14 @@ services:
       python run.py
     volumes:
       - ./src:/src
-      - ./Dataset:/Dataset
+      - ~/Dataset:/Dataset
       - ./Models:/root/.insightface/models/
-      - ./Results:/Results
+      - ~/Results/Mosaico:/Results
     container_name: mosaic-container-cpu
   MosaicPipeline-gpu:
     hostname: '$host'
     image: mosaic-image-gpu
-    runtime: nvidia
+    #runtime: nvidia
     environment:
       - CTX_ID=1
       - NVIDIA_VISIBLE_DEVICES=all
@@ -32,7 +32,7 @@ services:
       python -u run.py
     volumes:
       - ./src:/src
-      - ./Dataset:/Dataset
+      - ~/Dataset:/Dataset
       - ./Models:/root/.insightface/models/
-      - ./Results:/Results
+      - ~/Results/Mosaico:/Results
     container_name: mosaic-container-gpu

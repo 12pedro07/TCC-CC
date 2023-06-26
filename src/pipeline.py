@@ -18,8 +18,8 @@ class Pipeline:
     def __init__(self, **kwargs):
         # === Create attributes
         # String
-        self.output_identifier: str = kwargs['output']
         self.input_dataset: str = kwargs['input_dataset']
+        self.output_identifier: str = self.input_dataset
         self.output_extension: str = kwargs['output_extension']
         # Integer
         self.ctx_id: int = kwargs['ctx_id']
