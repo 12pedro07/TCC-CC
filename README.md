@@ -1,5 +1,9 @@
 # Neonatal Face Mosaic: An areas-of-interest segmentation method based on 2D face images
 
+## Publication
+
+https://sol.sbc.org.br/index.php/wvc/article/view/18914
+
 ## Dependencies
 
 - [Docker](https://www.docker.com);
