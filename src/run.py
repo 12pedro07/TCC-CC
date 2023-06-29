@@ -32,6 +32,9 @@ def read_config() -> dict:
     # Load the file
     with open('config.yml', 'r') as config_file:
         configs = yaml.safe_load(config_file)
+    with Path('/external_config.yaml').expanduser().open('r') as f:
+        c = yaml.safe_load(f)
+        configs['input_dataset'] = c['input_dataset']
     # Add environment variables
     configs['ctx_id'] = int(os.environ['CTX_ID'])
 

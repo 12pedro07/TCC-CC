@@ -2,6 +2,7 @@ version: '3'
 services:
   MosaicPipeline-cpu:
     hostname: '$host'
+    user: "${UID}:${GID}"
     image: mosaic-image-cpu
     environment:
       - CTX_ID=-1
@@ -13,12 +14,14 @@ services:
       python run.py
     volumes:
       - ./src:/src
-      - ~/Dataset:/Dataset
-      - ./Models:/root/.insightface/models/
-      - ~/Results/Mosaico:/Results
+      - $CONFIG_PATH:/external_config.yaml
+      - $DATASETS_PATH:/Dataset
+      - $MODELS_PATH:/root/.insightface/models/
+      - $RESULTS_PATH/Exp1-Mosaic:/Results
     container_name: mosaic-container-cpu
   MosaicPipeline-gpu:
     hostname: '$host'
+    user: "${UID}:${GID}"
     image: mosaic-image-gpu
     #runtime: nvidia
     environment:
@@ -32,7 +35,8 @@ services:
       python -u run.py
     volumes:
       - ./src:/src
-      - ~/Dataset:/Dataset
-      - ./Models:/root/.insightface/models/
-      - ~/Results/Mosaico:/Results
+      - $CONFIG_PATH:/external_config.yaml
+      - $DATASETS_PATH:/Dataset
+      - $MODELS_PATH:/root/.insightface/models/
+      - $RESULTS_PATH/Exp1-Mosaic:/Results
     container_name: mosaic-container-gpu

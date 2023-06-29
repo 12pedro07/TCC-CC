@@ -1,6 +1,6 @@
 # ====== STRING ====== #
 # output: Pipeline_Output # Name to identify the output [++ DEPRECATED ++]
-input_dataset: UNIFESP # Name of the input dataset directory (it must be under the )
+# input_dataset: UNIFESP # Name of the input dataset directory (it must be under the ) [++ DEPRECATED ++]
 output_extension: .jpg # Extension for the output images (.jpg, .png, .bmp ...)
 log_level: INFO # Log level. Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
