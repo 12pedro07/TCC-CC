@@ -16,7 +16,7 @@ services:
       - ./src:/src
       - $CONFIG_PATH:/external_config.yaml
       - $DATASETS_PATH:/Dataset
-      - $MODELS_PATH:/root/.insightface/models/
+      - $MODELS_PATH:/.insightface/models/
       - $RESULTS_PATH/Exp1-Mosaic:/Results
     container_name: mosaic-container-cpu
   MosaicPipeline-gpu:
