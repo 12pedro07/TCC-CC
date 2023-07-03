@@ -34,7 +34,7 @@ def read_config() -> dict:
         configs = yaml.safe_load(config_file)
     with Path('/external_config.yaml').expanduser().open('r') as f:
         c = yaml.safe_load(f)
-        configs['input_dataset'] = c['input_dataset']
+        configs['input_dataset'] = c['Exp1-Mosaic']['input_dataset']
     # Add environment variables
     configs['ctx_id'] = int(os.environ['CTX_ID'])
 
