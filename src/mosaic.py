@@ -126,7 +126,7 @@ MOSAIC = {
         "priority": 8,
         "inflation": 0
     },
-    "Entre olhos": {
+    "Fronte": {
         "coords": [49,51,50,46,39,75,72,81,89,97,102,103,104],
         "color": (255,0,0),
         "priority": 8,
@@ -145,13 +145,13 @@ MOSAIC = {
         "priority": 5,
         "inflation": 0
     },
-    "Sulco Esquerda": {
+    "Sulco esquerdo": {
         "function": sulcoEsquerdo,
         "color": (1, 0, 0),
         "priority": 20,
         "inflation": 0
     },
-    "Sulco Direito": {
+    "Sulco direito": {
         "function": sulcoDireito,
         "color": (1, 0, 0),
         "priority": 20,

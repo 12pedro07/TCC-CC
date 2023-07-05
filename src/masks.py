@@ -20,3 +20,10 @@ class Mask:
         mask_pixels = mask.sum() # Soma a imagem para ter quantos pixels pertencem a mascara
         mask_pct = mask_pixels / np.prod(mask.shape) # Porcentagem de pixels da imagem que pertencem a mascara
         return mask_pixels, mask_pct
+    def join_masks(masks_list):
+        if len(masks_list) == 0:
+            return None
+        m = masks_list[0].copy()
+        for other in masks_list[1:]:
+            m = np.clip(m+other, 0, 255)
+        return m

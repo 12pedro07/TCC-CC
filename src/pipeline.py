@@ -39,7 +39,7 @@ class Pipeline:
 
     # ====== PIPELINE STEPS (PUBLIC) ====== #
     def detection(self) -> None:
-        ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']
+        #['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']
         # === Create the detection object
         self.app = FaceAnalysis(allowed_modules=['detection', 'landmark_2d_106'], providers=['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'], root="/.insightface") # Detect and Use Regression for 106 2d keypoints
         self.app.prepare(ctx_id=self.ctx_id, det_size=(self.det_size, self.det_size)) # Set gpu/cpu and kernel size
@@ -225,7 +225,7 @@ class Pipeline:
                         region_info["color"],
                         cv2.LINE_AA
                     )
-            if self.partial_results: 
+            if self.partial_results:
                 # Apply the overlay
                 face_img = cv2.addWeighted(overlay_face, self.mosaic_alpha, face_img, 1 - self.mosaic_alpha, 0)
                 img = cv2.addWeighted(overlay, self.mosaic_alpha, img, 1 - self.mosaic_alpha, 0)
@@ -234,6 +234,38 @@ class Pipeline:
                     cv2.imwrite(str(self.dst_path / ("mosaic_face-"+face)), face_img)
                     cv2.imwrite(str(self.dst_path / ("mosaic"+face)), img)
                 except: pass
+
+    def join_regions(self):
+        regions = {
+            'Fenda palpebral': ['Olho direito', 'Olho esquerdo'],
+            'Sulco nasolabial': ['Sulco direito', 'Sulco esquerdo']
+        }
+        for image_dir in self.dst_path.glob('[0-9]*'):
+            for region, sub_regions in regions.items():
+                # Load the label
+                with (image_dir / 'face_data.json').open('r') as f:
+                    label = json.load(f)['label']
+                # Prepare paths
+                masks_path = image_dir / 'masks'
+                result_mask_path = self.output_dataset_path / 'Mascaras' / label / region
+                result_crop_path = self.output_dataset_path / 'Regioes' / label / region
+                # Create the result dir if necessary
+                result_mask_path.mkdir(parents=True, exist_ok=True)
+                result_crop_path.mkdir(parents=True, exist_ok=True)
+                result_mask = cv2.imread(str(masks_path / f'{sub_regions[0]}{self.output_extension}'), 0).copy()
+                for sr in sub_regions[1:]:
+                    sr_mask = cv2.imread(str(masks_path / f'{sr}{self.output_extension}'), 0)
+                    result_mask = result_mask + sr_mask
+                    result_mask[result_mask > 127] = 255
+                    result_mask[result_mask <= 127] = 0
+                # Apply the masks to generate the crops
+                img = cv2.imread(str(image_dir / f"bbox_crop-affine{self.output_extension}"))
+                result_crop = Mask.apply(img, result_mask)
+                # Save masks and crops
+                cv2.imwrite(str(image_dir / 'crops' / f'{region}{self.output_extension}'), result_crop)
+                cv2.imwrite(str(result_crop_path / f'{image_dir.name}{self.output_extension}'), result_crop)
+                cv2.imwrite(str(masks_path / f'{region}{self.output_extension}'), result_mask)
+                cv2.imwrite(str(result_mask_path / f'{image_dir.name}{self.output_extension}'), result_mask)
 
     # ====== PRIVATE METHODS ====== #
     def _affine_transform(self, img: np.array, src_points: Tuple[np.float32], dst_points: Tuple[np.float32]) -> Tuple[np.array, np.array]:

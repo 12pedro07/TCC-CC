@@ -35,6 +35,7 @@ def read_config() -> dict:
     with Path('/external_config.yaml').expanduser().open('r') as f:
         c = yaml.safe_load(f)
         configs['input_dataset'] = c['Exp1-Mosaic']['input_dataset']
+        configs['NFCS_regions'] = c['Exp1-Mosaic']['NFCS_regions']
     # Add environment variables
     configs['ctx_id'] = int(os.environ['CTX_ID'])
 
@@ -61,5 +62,10 @@ if __name__=='__main__':
     if configs['process_mosaic']: pipeline.mosaic()
     else: logger.warning('[WARNING] Skipping mosaic step')
     logger.info('[CHECKPOINT] Finished mosaic')
+    # === Join nfcs regions
+    if configs['NFCS_regions']:
+        logger.info('[CHECKPOINT] Joining nfcs regions')
+        pipeline.join_regions()
+        logger.info('[CHECKPOINT] Finished nfcs regions')
     # === End logs
     logger.info(f'[END] Finished after {(time.time()-start):.2f} seconds')
